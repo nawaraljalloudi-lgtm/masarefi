@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مصاريفي</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14213d">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--navy:#14213d;--navy2:#1f3157;--gold:#c9a64a;--bg:#f5f6fa;--card:#fff;--tx:#1b2233;--mut:#5b6478;--line:#e1e4ec;--red:#b3383a;--grn:#1f7a4d;--amb:#a8650a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Tahoma,"Segoe UI",Arial,sans-serif;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding:14px}
+header{background:var(--navy);color:#fff;padding:14px 16px;text-align:center;font-size:1.25rem;font-weight:700;border-bottom:3px solid var(--gold)}
+.bal{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.b{background:var(--navy);color:#fff;border-radius:14px;padding:14px;text-align:center}
+.b small{display:block;color:#e6d9a8;margin-bottom:4px}
+.b strong{font-size:1.25rem;white-space:nowrap;direction:ltr;display:block}
+.row{display:flex;gap:10px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);padding:11px 14px;font-weight:600}
+button.p{background:var(--navy);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.row button{flex:1;display:flex;gap:8px;align-items:center;justify-content:center}
+svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+h2{font-size:1.05rem;margin:18px 0 8px;color:var(--navy)}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.cat{flex-direction:column;display:flex;align-items:center;gap:6px;padding:14px 6px;background:var(--card);border:1.5px solid var(--line)}
+.cat svg{width:30px;height:30px;color:var(--navy)}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.card small{color:var(--mut)}
+.num{white-space:nowrap;direction:ltr;unicode-bidi:isolate;font-weight:700}
+.flt{display:flex;gap:8px;flex-wrap:wrap}
+select,input{font:inherit;padding:9px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--tx);width:100%}
+.flt select{flex:1;min-width:130px;width:auto}
+.tx{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-right:5px solid var(--navy);border-radius:12px;padding:10px;margin-bottom:8px}
+.tx.income{border-right-color:var(--grn)}.tx.loan{border-right-color:var(--amb);background:#fff9ee}
+.tx .i{flex:1;min-width:0}.tx .n{color:var(--mut);font-size:.9rem;overflow-wrap:anywhere}
+.tx .a{font-weight:700;direction:ltr;white-space:nowrap}
+.tx.expense .a{color:var(--red)}.tx.income .a{color:var(--grn)}.tx.loan .a{color:var(--amb)}
+.tag{font-size:.78rem;padding:1px 8px;border-radius:99px;border:1px solid currentColor;margin-inline-start:6px}
+.del{padding:6px;border-color:var(--line);color:var(--mut)}
+.empty{text-align:center;color:var(--mut);padding:24px}
+.ov{position:fixed;inset:0;background:rgba(10,15,30,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:9}
+.ov.on{display:flex}
+.dlg{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:400px}
+.dlg h3{margin:0 0 12px;color:var(--navy)}
+.dlg label{display:block;margin:10px 0 4px;font-weight:600;font-size:.92rem}
+.seg{display:flex;gap:8px}.seg button{flex:1}.seg button.on{background:var(--navy);color:#fff}
+.acts{display:flex;gap:10px;margin-top:16px}.acts button{flex:1}
+#err{display:none;background:var(--red);color:#fff;padding:10px;text-align:center}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:99px;display:none;z-index:20}
+#report{display:none}
+@media print{
+ body>:not(#report){display:none!important}
+ #report{display:block;color:#000;padding:8mm}
+ #report table{width:100%;border-collapse:collapse;margin:8px 0}
+ #report th,#report td{border:1px solid #888;padding:5px 7px;text-align:right;font-size:12px}
+ #report th{background:#e8ebf3}
+ #report h1{color:#14213d;margin:0 0 4px}
+ @page{margin:10mm}
+}
+</style>
+</head>
+<body>
+<div id="err">تعذّر حفظ البيانات! قد تكون مساحة التخزين ممتلئة أو التخزين معطّل في المتصفح.</div>
+<header>مصاريفي</header>
+<div class="wrap">
+ <div class="bal">
+  <div class="b"><small>رصيدي بالليرة السورية</small><strong id="bS">0 ل.س</strong></div>
+  <div class="b"><small>رصيدي بالدولار</small><strong id="bU">0 USD</strong></div>
+ </div>
+ <div class="row">
+  <button class="p" data-act="income"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>إضافة مبلغ معي</button>
+  <button data-act="loan"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>تسجيل قرضة</button>
+ </div>
+ <h2>المصاريف</h2>
+ <div class="cats" id="cats"></div>
+ <h2>ملخص الفترة المعروضة</h2>
+ <div class="sum" id="sum"></div>
+ <h2>سجل الحركات</h2>
+ <div class="flt">
+  <select id="fm" aria-label="الشهر"></select>
+  <select id="ft" aria-label="النوع"><option value="all">جميع الحركات</option><option value="expense">المصاريف</option><option value="income">المبالغ المضافة</option><option value="loan">القروض</option></select>
+ </div>
+ <div id="list" style="margin-top:10px"></div>
+ <div class="row" style="margin-top:14px">
+  <button class="p" id="pdf"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6"/></svg>تصدير PDF</button>
+  <button id="clr"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>حذف كل الحركات</button>
+ </div>
+</div>
+<div class="ov" id="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt">
+ <h3 id="dt"></h3>
+ <label for="am">المبلغ</label><input id="am" type="number" inputmode="decimal" min="0" step="any" placeholder="0">
+ <label>العملة</label><div class="seg" id="cur"><button type="button" data-c="SYP" class="on">ليرة سورية</button><button type="button" data-c="USD">دولار</button></div>
+ <label for="nt">ملاحظة (اختيارية)</label><input id="nt" type="text" maxlength="120">
+ <label for="dd">التاريخ</label><input id="dd" type="date">
+ <div id="ve" style="color:var(--red);min-height:1.3em;margin-top:6px"></div>
+ <div class="acts"><button class="p" id="sv">حفظ</button><button id="cn">إلغاء</button></div>
+</div></div>
+<div class="ov" id="cf"><div class="dlg"><h3 id="ct"></h3><p id="cm"></p><div class="acts"><button class="p" id="cy">نعم، تأكيد</button><button id="cx">إلغاء</button></div></div></div>
+<div id="toast"></div>
+<div id="report"></div>
+<script>
+const KEY="masarefi_v1";
+const CATS={clothes:["ثياب","M8 3l-5 3 2 4 3-1v11h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"],food:["أكل","M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"],snacks:["تسالي","M12 3a9 9 0 1 0 9 9 4 4 0 0 1-4-4 4 4 0 0 1-5-5zM8 11h.01M12 15h.01M15 12h.01"],charity:["تبرع","M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"],other:["مصاريف أخرى","M5 12h.01M12 12h.01M19 12h.01"]};
+const $=id=>document.getElementById(id);
+let tx=[],cur="SYP",mode=null,cfAct=null;
+function load(){try{tx=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(tx))tx=[]}catch(e){tx=[];err()}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(tx));$("err").style.display="none";return true}catch(e){err();return false}}
+function err(){$("err").style.display="block"}
+const fmt=(n,c)=>{const r=Number(n).toLocaleString("en-US",{maximumFractionDigits:2})+(c==="USD"?" USD":" ل.س");return"\u2066"+r+"\u2069"};
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const MN=["كانون الثاني","شباط","آذار","نيسان","أيار","حزيران","تموز","آب","أيلول","تشرين الأول","تشرين الثاني","كانون الأول"];
+const mlabel=m=>m==="all"?"كل الأشهر":MN[+m.slice(5)-1]+" "+m.slice(0,4);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function label(t){return t.type==="expense"?CATS[t.cat][0]:t.type==="income"?"مبلغ مضاف":"قرضة مستدانة"}
+function bal(c){return tx.filter(t=>t.cur===c).reduce((s,t)=>s+(t.type==="expense"?-t.amount:t.amount),0)}
+function shown(){const m=$("fm").value,ty=$("ft").value;return tx.filter(t=>(m==="all"||t.date.slice(0,7)===m)&&(ty==="all"||t.type===ty)).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id)}
+function totals(a){const r={};["SYP","USD"].forEach(c=>{r[c]={expense:0,income:0,loan:0};a.filter(t=>t.cur===c).forEach(t=>r[c][t.type]+=t.amount)});return r}
+function months(){const s=new Set(tx.map(t=>t.date.slice(0,7)));s.add(today().slice(0,7));return[...s].sort().reverse()}
+function fillMonths(keep){const sel=$("fm"),v=keep||sel.value||today().slice(0,7);sel.innerHTML='<option value="all">كل الأشهر</option>'+months().map(m=>`<option value="${m}">${mlabel(m)}</option>`).join("");sel.value=[...sel.options].some(o=>o.value===v)?v:"all"}
+function render(){
+ $("bS").textContent=fmt(bal("SYP"),"SYP");$("bU").textContent=fmt(bal("USD"),"USD");
+ const a=shown(),T=totals(a);
+ $("sum").innerHTML=["SYP","USD"].map(c=>`<div class="card"><small>${c==="SYP"?"بالليرة":"بالدولار"}</small><div>مصروف: <span class="num">${fmt(T[c].expense,c)}</span></div><div>أُضيف: <span class="num">${fmt(T[c].income,c)}</span></div><div>قروض: <span class="num">${fmt(T[c].loan,c)}</span></div></div>`).join("");
+ $("list").innerHTML=a.length?a.map(t=>`<div class="tx ${t.type}"><div class="i"><b>${label(t)}</b>${t.type==="loan"?'<span class="tag" style="color:var(--amb)">مستدان</span>':""}<div class="n">${esc(t.note||"—")} · ${t.date}</div></div><div class="a">${t.type==="expense"?"−":"+"}${fmt(t.amount,t.cur)}</div><button class="del" data-del="${t.id}" aria-label="حذف الحركة"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>`).join(""):'<div class="empty">لا توجد حركات</div>';
+}
+function toast(m){const e=$("toast");e.textContent=m;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2200)}
+function openD(m){mode=m;$("dt").textContent=m==="income"?"إضافة مبلغ معي":m==="loan"?"تسجيل قرضة":"مصروف: "+CATS[m][0];
+ $("am").value="";$("nt").value="";$("dd").value=today();$("ve").textContent="";setCur("SYP");$("ov").classList.add("on");setTimeout(()=>$("am").focus(),50)}
+function setCur(c){cur=c;document.querySelectorAll("#cur button").forEach(b=>b.classList.toggle("on",b.dataset.c===c))}
+function closeD(){$("ov").classList.remove("on");mode=null}
+function saveTx(){
+ const amount=parseFloat($("am").value),date=$("dd").value;
+ if(!(amount>0)){$("ve").textContent="أدخل مبلغاً صحيحاً أكبر من صفر";return}
+ if(!date){$("ve").textContent="اختر التاريخ";return}
+ const isCat=!!CATS[mode];
+ const t={id:Math.max(Date.now(),...tx.map(x=>x.id+1)),type:isCat?"expense":mode,cat:isCat?mode:null,amount,cur,note:$("nt").value.trim(),date};
+ tx.push(t);
+ if(!save()){tx.pop();render();return}
+ const m=date.slice(0,7);closeD();fillMonths($("fm").value==="all"?"all":m);if($("ft").value!=="all"&&$("ft").value!==t.type)$("ft").value="all";render();toast("تم الحفظ")}
+function confirmD(title,msg,fn){$("ct").textContent=title;$("cm").textContent=msg;cfAct=fn;$("cf").classList.add("on")}
+function exportPdf(){
+ const a=shown().slice().reverse(),T=totals(a),m=$("fm").value;
+ $("report").innerHTML=`<h1>تقرير مصاريفي</h1><div>الفترة: ${mlabel(m)} — النوع: ${$("ft").selectedOptions[0].text}</div><table><tr><th>التاريخ</th><th>التصنيف</th><th>المبلغ</th><th>الملاحظة</th></tr>${a.map(t=>`<tr><td>${t.date}</td><td>${label(t)}</td><td dir="ltr" style="text-align:right">${t.type==="expense"?"−":"+"}${fmt(t.amount,t.cur)}</td><td>${esc(t.note||"")}</td></tr>`).join("")||'<tr><td colspan="4">لا توجد حركات</td></tr>'}</table><h3>الإجماليات</h3><table><tr><th>العملة</th><th>المصاريف</th><th>المبالغ المضافة</th><th>القروض</th></tr>${["SYP","USD"].map(c=>`<tr><td>${c==="SYP"?"ليرة سورية":"دولار"}</td><td dir="ltr" style="text-align:right">${fmt(T[c].expense,c)}</td><td dir="ltr" style="text-align:right">${fmt(T[c].income,c)}</td><td dir="ltr" style="text-align:right">${fmt(T[c].loan,c)}</td></tr>`).join("")}</table>`;
+ toast("في نافذة الطباعة اختر «حفظ كـ PDF»");
+ setTimeout(()=>window.print(),400)}
+$("cats").innerHTML=Object.entries(CATS).map(([k,v])=>`<button class="cat" data-act="${k}"><svg viewBox="0 0 24 24"${k==="other"?' style="stroke-width:3"':""}><path d="${v[1]}"/></svg>${v[0]}</button>`).join("");
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.act)openD(b.dataset.act);
+ else if(b.dataset.c)setCur(b.dataset.c);
+ else if(b.dataset.del){const id=+b.dataset.del;confirmD("حذف الحركة","هل تريد حذف هذه الحركة؟ سيتحدث الرصيد.",()=>{const old=tx;tx=tx.filter(t=>t.id!==id);if(!save())tx=old;render();toast("تم الحذف")})}
+});
+$("sv").onclick=saveTx;$("cn").onclick=closeD;
+$("ov").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName==="INPUT")saveTx();if(e.key==="Escape")closeD()});
+$("fm").onchange=$("ft").onchange=render;
+$("pdf").onclick=exportPdf;
+$("clr").onclick=()=>confirmD("حذف كل الحركات","سيتم حذف جميع الحركات من التطبيق نهائياً ويصبح الرصيد صفراً. هل حفظت تقرير PDF أولاً؟ ملفات PDF المحفوظة على جهازك لا تتأثر.",()=>{const old=tx;tx=[];if(!save())tx=old;fillMonths();render();toast("تم الحذف، يمكنك البدء من جديد")});
+$("cy").onclick=()=>{$("cf").classList.remove("on");if(cfAct)cfAct();cfAct=null};
+$("cx").onclick=()=>{$("cf").classList.remove("on");cfAct=null};
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+load();fillMonths(today().slice(0,7));render();
+</script>
+</body>
+</html>
