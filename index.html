@@ -41,6 +41,8 @@ select,input{font:inherit;padding:9px;border:1.5px solid var(--line);border-radi
 .tx.expense .a{color:var(--red)}.tx.income .a{color:var(--grn)}.tx.loan .a{color:var(--amb)}
 .tag{font-size:.78rem;padding:1px 8px;border-radius:99px;border:1px solid currentColor;margin-inline-start:6px}
 .del{padding:6px;border-color:var(--line);color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.chip{padding:5px 12px;border-radius:99px;font-size:.9rem;border-color:var(--line)}.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+select:disabled{opacity:.5}
 .empty{text-align:center;color:var(--mut);padding:24px}
 .ov{position:fixed;inset:0;background:rgba(10,15,30,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:9}
 .ov.on{display:flex}
@@ -84,6 +86,7 @@ select,input{font:inherit;padding:9px;border:1.5px solid var(--line);border-radi
   <select id="fm" aria-label="الشهر"></select>
   <select id="ft" aria-label="النوع"><option value="all">جميع الحركات</option><option value="expense">المصاريف</option><option value="income">المبالغ المضافة</option><option value="loan">القروض</option></select>
  </div>
+ <div class="chips" id="chips" aria-label="فلترة حسب التصنيف"></div>
  <div id="list" style="margin-top:10px"></div>
  <div class="row" style="margin-top:14px">
   <button class="p" id="pdf"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6"/></svg>تصدير PDF</button>
@@ -104,9 +107,9 @@ select,input{font:inherit;padding:9px;border:1.5px solid var(--line);border-radi
 <div id="report"></div>
 <script>
 const KEY="masarefi_v1";
-const CATS={clothes:["ثياب","M8 3l-5 3 2 4 3-1v11h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"],food:["أكل","M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"],snacks:["تسالي","M12 3a9 9 0 1 0 9 9 4 4 0 0 1-4-4 4 4 0 0 1-5-5zM8 11h.01M12 15h.01M15 12h.01"],charity:["تبرع","M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"],other:["مصاريف أخرى","M5 12h.01M12 12h.01M19 12h.01"]};
+const CATS={clothes:["ثياب","M8 3l-5 3 2 4 3-1v11h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0z"],food:["أكل","M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10"],snacks:["تسالي","M12 3a9 9 0 1 0 9 9 4 4 0 0 1-4-4 4 4 0 0 1-5-5zM8 11h.01M12 15h.01M15 12h.01"],charity:["تبرع","M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"],transport:["مواصلات","M5 4h14a1 1 0 0 1 1 1v11H4V5a1 1 0 0 1 1-1zM4 11h16M7 20v-4M17 20v-4M8 15h.01M16 15h.01"],internet:["إنترنت","M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"],other:["مصاريف أخرى","M5 12h.01M12 12h.01M19 12h.01"]};
 const $=id=>document.getElementById(id);
-let tx=[],cur="SYP",mode=null,cfAct=null;
+let tx=[],cur="SYP",mode=null,cfAct=null;const sel=new Set();
 function load(){try{tx=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(tx))tx=[]}catch(e){tx=[];err()}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(tx));$("err").style.display="none";return true}catch(e){err();return false}}
 function err(){$("err").style.display="block"}
@@ -117,14 +120,15 @@ const mlabel=m=>m==="all"?"كل الأشهر":MN[+m.slice(5)-1]+" "+m.slice(0,4)
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function label(t){return t.type==="expense"?CATS[t.cat][0]:t.type==="income"?"مبلغ مضاف":"قرضة مستدانة"}
 function bal(c){return tx.filter(t=>t.cur===c).reduce((s,t)=>s+(t.type==="expense"?-t.amount:t.amount),0)}
-function shown(){const m=$("fm").value,ty=$("ft").value;return tx.filter(t=>(m==="all"||t.date.slice(0,7)===m)&&(ty==="all"||t.type===ty)).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id)}
+function shown(){const m=$("fm").value,ty=$("ft").value;return tx.filter(t=>(m==="all"||t.date.slice(0,7)===m)&&(sel.size?(t.type==="expense"&&sel.has(t.cat)):(ty==="all"||t.type===ty))).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id)}
 function totals(a){const r={};["SYP","USD"].forEach(c=>{r[c]={expense:0,income:0,loan:0};a.filter(t=>t.cur===c).forEach(t=>r[c][t.type]+=t.amount)});return r}
 function months(){const s=new Set(tx.map(t=>t.date.slice(0,7)));s.add(today().slice(0,7));return[...s].sort().reverse()}
 function fillMonths(keep){const sel=$("fm"),v=keep||sel.value||today().slice(0,7);sel.innerHTML='<option value="all">كل الأشهر</option>'+months().map(m=>`<option value="${m}">${mlabel(m)}</option>`).join("");sel.value=[...sel.options].some(o=>o.value===v)?v:"all"}
 function render(){
  $("bS").textContent=fmt(bal("SYP"),"SYP");$("bU").textContent=fmt(bal("USD"),"USD");
  const a=shown(),T=totals(a);
- $("sum").innerHTML=["SYP","USD"].map(c=>`<div class="card"><small>${c==="SYP"?"بالليرة":"بالدولار"}</small><div>مصروف: <span class="num">${fmt(T[c].expense,c)}</span></div><div>أُضيف: <span class="num">${fmt(T[c].income,c)}</span></div><div>قروض: <span class="num">${fmt(T[c].loan,c)}</span></div></div>`).join("");
+ $("sum").innerHTML=["SYP","USD"].map(c=>`<div class="card"><small>${c==="SYP"?"بالليرة":"بالدولار"}</small><div>مصروف: <span class="num">${fmt(T[c].expense,c)}</span></div>${sel.size?"":`<div>أُضيف: <span class="num">${fmt(T[c].income,c)}</span></div><div>قروض: <span class="num">${fmt(T[c].loan,c)}</span></div>`}</div>`).join("");
+ $("chips").innerHTML=`<button class="chip${sel.size?"":" on"}" data-chip="">الكل</button>`+Object.entries(CATS).map(([k,v])=>`<button class="chip${sel.has(k)?" on":""}" data-chip="${k}" aria-pressed="${sel.has(k)}">${v[0]}</button>`).join("");$("ft").disabled=sel.size>0;
  $("list").innerHTML=a.length?a.map(t=>`<div class="tx ${t.type}"><div class="i"><b>${label(t)}</b>${t.type==="loan"?'<span class="tag" style="color:var(--amb)">مستدان</span>':""}<div class="n">${esc(t.note||"—")} · ${t.date}</div></div><div class="a">${t.type==="expense"?"−":"+"}${fmt(t.amount,t.cur)}</div><button class="del" data-del="${t.id}" aria-label="حذف الحركة"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>`).join(""):'<div class="empty">لا توجد حركات</div>';
 }
 function toast(m){const e=$("toast");e.textContent=m;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2200)}
@@ -144,7 +148,7 @@ function saveTx(){
 function confirmD(title,msg,fn){$("ct").textContent=title;$("cm").textContent=msg;cfAct=fn;$("cf").classList.add("on")}
 function exportPdf(){
  const a=shown().slice().reverse(),T=totals(a),m=$("fm").value;
- $("report").innerHTML=`<h1>تقرير مصاريفي</h1><div>الفترة: ${mlabel(m)} — النوع: ${$("ft").selectedOptions[0].text}</div><table><tr><th>التاريخ</th><th>التصنيف</th><th>المبلغ</th><th>الملاحظة</th></tr>${a.map(t=>`<tr><td>${t.date}</td><td>${label(t)}</td><td dir="ltr" style="text-align:right">${t.type==="expense"?"−":"+"}${fmt(t.amount,t.cur)}</td><td>${esc(t.note||"")}</td></tr>`).join("")||'<tr><td colspan="4">لا توجد حركات</td></tr>'}</table><h3>الإجماليات</h3><table><tr><th>العملة</th><th>المصاريف</th><th>المبالغ المضافة</th><th>القروض</th></tr>${["SYP","USD"].map(c=>`<tr><td>${c==="SYP"?"ليرة سورية":"دولار"}</td><td dir="ltr" style="text-align:right">${fmt(T[c].expense,c)}</td><td dir="ltr" style="text-align:right">${fmt(T[c].income,c)}</td><td dir="ltr" style="text-align:right">${fmt(T[c].loan,c)}</td></tr>`).join("")}</table>`;
+ $("report").innerHTML=`<h1>تقرير مصاريفي</h1><div>الفترة: ${mlabel(m)} — النوع: ${sel.size?[...sel].map(k=>CATS[k][0]).join("، "):$("ft").selectedOptions[0].text}</div><table><tr><th>التاريخ</th><th>التصنيف</th><th>المبلغ</th><th>الملاحظة</th></tr>${a.map(t=>`<tr><td>${t.date}</td><td>${label(t)}</td><td dir="ltr" style="text-align:right">${t.type==="expense"?"−":"+"}${fmt(t.amount,t.cur)}</td><td>${esc(t.note||"")}</td></tr>`).join("")||'<tr><td colspan="4">لا توجد حركات</td></tr>'}</table><h3>الإجماليات</h3><table><tr><th>العملة</th><th>المصاريف</th><th>المبالغ المضافة</th><th>القروض</th></tr>${["SYP","USD"].map(c=>`<tr><td>${c==="SYP"?"ليرة سورية":"دولار"}</td><td dir="ltr" style="text-align:right">${fmt(T[c].expense,c)}</td><td dir="ltr" style="text-align:right">${fmt(T[c].income,c)}</td><td dir="ltr" style="text-align:right">${fmt(T[c].loan,c)}</td></tr>`).join("")}</table>`;
  toast("في نافذة الطباعة اختر «حفظ كـ PDF»");
  setTimeout(()=>window.print(),400)}
 $("cats").innerHTML=Object.entries(CATS).map(([k,v])=>`<button class="cat" data-act="${k}"><svg viewBox="0 0 24 24"${k==="other"?' style="stroke-width:3"':""}><path d="${v[1]}"/></svg>${v[0]}</button>`).join("");
@@ -152,6 +156,7 @@ document.addEventListener("click",e=>{
  const b=e.target.closest("button");if(!b)return;
  if(b.dataset.act)openD(b.dataset.act);
  else if(b.dataset.c)setCur(b.dataset.c);
+ else if(b.dataset.chip!==undefined){const k=b.dataset.chip;if(!k)sel.clear();else if(sel.has(k))sel.delete(k);else sel.add(k);render()}
  else if(b.dataset.del){const id=+b.dataset.del;confirmD("حذف الحركة","هل تريد حذف هذه الحركة؟ سيتحدث الرصيد.",()=>{const old=tx;tx=tx.filter(t=>t.id!==id);if(!save())tx=old;render();toast("تم الحذف")})}
 });
 $("sv").onclick=saveTx;$("cn").onclick=closeD;
